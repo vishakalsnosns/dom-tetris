@@ -7,48 +7,87 @@
     <style>
         .game-window{
             display:grid;
-            grid-template-columns: 2;
+            grid-template-columns: 3;
             grid-template-rows: 1;
             background-color: green;
             height: 800px;
             width: 600px;
         }
-        .sidebar{
-            display: flex;
-            justify-content: center;
+        h1{
+            color: white;
+            padding: 0px;
+            margin: 0px;
+            width: fit-content;
+            height: fit-content;
+            font-family:Arial, Helvetica, sans-serif;
+            letter-spacing: -1px;
+        }
+        .left-sidebar{
+            display:flex;
+            flex-direction: column;
+            position:relative;
+            align-items: center;
             grid-column-start: 1;
             background-color: rgb(30, 30, 30);
-            height: 792px;
-            width: 296px;
+            height: 800px;
+            width: 300px;
             border-left: 4px solid rgb(230, 230, 230);
             border-top: 4px solid rgb(230, 230, 230);
             border-bottom: 4px solid rgb(230, 230, 230);
-            border-right: 2px solid rgb(230, 230, 230);
+            border-right: 4px solid rgb(230, 230, 230);
         }
         #hold-grid{
-            margin-top: 20px;
+            margin: 0px;
+            height: fit-content;
+            border-left: 4px solid rgb(230, 230, 230);
+            border-top: 4px solid rgb(230, 230, 230);
+            border-bottom: 4px solid rgb(230, 230, 230);
+            border-right: 4px solid rgb(230, 230, 230);
         }
         .board{
             grid-column-start: 2;
-            display: grid;
             position: relative;
             background-color: peachpuff;
             height: 800px;
             width: 400px;
             display: block;
+            border-top: 4px solid rgb(230, 230, 230);
+            border-bottom: 4px solid rgb(230, 230, 230);
+        }
+        .right-sidebar{
+            display: flex;
+            position:relative;
+            grid-column-start: 3;
+            align-items: center;
+            flex-direction: column;
+            background-color: rgb(30, 30, 30);
+            height: 800px;
+            width: 300px;
+            border-left: 4px solid rgb(230, 230, 230);
+            border-top: 4px solid rgb(230, 230, 230);
+            border-bottom: 4px solid rgb(230, 230, 230);
+            border-right: 4px solid rgb(230, 230, 230);
+        }
+        #next-grid{
+            margin: 0px;
+            height: fit-content;
+            border-left: 4px solid rgb(230, 230, 230);
+            border-top: 4px solid rgb(230, 230, 230);
+            border-bottom: 4px solid rgb(230, 230, 230);
+            border-right: 4px solid rgb(230, 230, 230);
         }
         td{
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
             padding: 0px;
-            border: 2px solid rgb(230, 230, 230);
             background-color: rgb(30, 30, 30);
         }
     </style>
 </head>
 <body style="background-color: rgb(10, 10, 10);">
     <div class="game-window">
-        <div class="sidebar">
+        <div class="left-sidebar">
+            <div class="grid-caption"><h1>HOLD</h1></div>
             <div id="hold-grid"></div>
         </div>
         <div class="board">
@@ -56,6 +95,11 @@
                 <div id="play-grid">
                 </div>
             </table>
+        </div>
+        <div class="right-sidebar">
+            <div class="grid-caption"><h1>NEXT</h1></div>
+            
+            <div id="next-grid"></div>
         </div>
     </div>
     <script src="main.js"></script>
