@@ -10,14 +10,3 @@ Runs through the DOM through styling a coloured table.
 * Hard drop
 * Line clears
 * Score system
-
-# X-movement
-* X translation on input
-* Left-right collision with bounds and collision grid
-
-# Ghost piece
-* Algorithm for furthest down translation
-* Rework colors
-
-# Hard drop
-* Set active coordinates to furthest down translation algorithm
