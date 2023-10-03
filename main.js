@@ -180,18 +180,18 @@ function ClearNext(){
 
 //REPLACE WITH SWITCH x2 !! ; in the Ready function ; offset -1 in y for update specifications
 const starting_coords = {
-    "T": [[3,0],[4,0],[5,0],[4,-1]],
-    "I": [[3,-1],[4,-1],[5,-1],[6,-1]],
-    "J": [[5,-1],[3,0],[4,0],[5,0]],
-    "L": [[3,-1],[3,0],[4,0],[5,0]],
-    "O": [[4,-1],[5,-1],[4,0],[5,0]],
-    "S": [[3,0],[4,0],[4,-1],[5,-1]],
-    "Z": [[4,0],[5,0],[3,-1],[4,-1]]
+    "T": [[3,1],[4,1],[5,1],[4,0]],
+    "I": [[3,0],[4,0],[5,0],[6,0]],
+    "J": [[5,0],[3,1],[4,1],[5,1]],
+    "L": [[3,0],[3,1],[4,1],[5,1]],
+    "O": [[4,0],[5,0],[4,1],[5,1]],
+    "S": [[3,1],[4,1],[4,0],[5,0]],
+    "Z": [[4,1],[5,1],[3,0],[4,0]]
 }
 
 //engine logic
 //runs once to prepare State object
-const fall_rate = 60
+let fall_rate = 60
 const frames_until_next_piece = 60
 function Ready(){
     //prepare variables to pass into the State object
@@ -208,28 +208,60 @@ function Ready(){
         next_piece: next,
         frames_until_fall: fall_rate,
         can_fall: true,
+        first_soft_drop_down: false,
         landing_time: frames_until_next_piece
     }
 
-    let drop_key_down = false
-    //button press event listeners
-    document.addEventListener("keydown", (button) => {
-    let key = button.code
-    //drop button pressed
-    if (key == "Space" || key == "ArrowDown"){
-        drop_key_down = true
-    }
-    else if (key != "Space" || key == "ArrowDown"){
-        drop_key_down = false
-    }
-})
+    
     Update(State)
 }
 
+//controls
+let drop_key_down = false
+let left_key_down = false
+let right_key_down = false
+let soft_drop_key_down = false
+//button press event listeners
+document.addEventListener("keydown", (button) => {
+    let key = button.code
+    //drop button pressed
+    switch (key){
+        case "Space":
+            drop_key_down = true
+            break
+        case "ArrowDown":
+            soft_drop_key_down = true
+            break
+        case "ArrowLeft":
+            left_key_down = true
+            break
+        case "ArrowRight":
+            right_key_down = true
+            break
+    }
+})
+document.addEventListener("keyup", (button) =>{
+    let key=button.code
+    switch (key){
+        case "Space":
+            drop_key_down = false
+            break
+        case "ArrowDown":
+            soft_drop_key_down = false
+            break
+        case "ArrowLeft":
+            left_key_down = false
+            break
+        case "ArrowRight":
+            right_key_down = false
+            break
+    }
+})
+
 //runs recursively on 60fps to manipulate and rerender State object to DOM
 function Update(State){
-    //UNPACK STATE--------------------
-    let {bag, active_piece, active_coords, next_piece, frames_until_fall, can_fall, landing_time} = State
+    //UNPACK VARIABLES
+    let {bag, active_piece, active_coords, next_piece, frames_until_fall, can_fall, first_soft_drop_down, landing_time} = State
     if (landing_time == 0){
         //RESET STATE VARIABLES DUE TO NEW PIECE
         
@@ -244,18 +276,44 @@ function Update(State){
 
         next_piece = bag[0]
         bag.splice(0,1)
+        if (bag.length < 2){
+            ShuffleBag().map((e)=>{
+                bag.push(e)
+            })
+        console.log(bag)
+        }
         
         //clear next
         ClearNext()
+        PaintNext(next_piece)
 
         //reset timers
         can_fall = true
         frames_until_fall = 60
         landing_time = 60
     }
-    //LOGIC---------------------------
+
 
     //y-movement
+
+    if (soft_drop_key_down && !first_soft_drop_down && can_fall){
+        first_soft_drop_down = true
+    }
+    else if (frames_until_fall == 0 && can_fall || first_soft_drop_down && can_fall){
+        active_coords = FallPiece(active_coords)
+        
+        if (soft_drop_key_down){
+            frames_until_fall = 2
+        }
+        else{
+            frames_until_fall = fall_rate
+        }
+        first_soft_drop_down = false
+    }
+    else if(!can_fall && landing_time > 0){
+        landing_time = landing_time - 1
+    }
+    frames_until_fall = frames_until_fall - 1
 
     //cases when the piece cant fall ; edits the can_fall variable to false to prevent the piece from falling
     for(let i=0; i<active_coords.length; i++){
@@ -265,31 +323,18 @@ function Update(State){
         }
     }
 
-    //piece falling
-    //not on the ground and its time to fall
-    if (frames_until_fall == 0 && can_fall){
-        //edit piece position
-        active_coords = FallPiece(active_coords)
-        
-        //reset to 60 frames
-        frames_until_fall = fall_rate
-    }
-    //on the ground and its not time to go to next piece
-    else if(!can_fall && landing_time > 0){
-        landing_time = landing_time - 1
-    }
-    frames_until_fall = frames_until_fall - 1
-
-    //piece dropping
+    //hard dropping
     
 
     //RENDER--------------------------
 
     PaintPiece(active_piece, active_coords)
-    PaintNext(next_piece)    //switch to only new pieces
+    PaintNext(next_piece)
 
 
     //UPDATE STATE--------------------
+
+
     State = {
         bag: bag,
         active_piece: active_piece,
@@ -297,9 +342,10 @@ function Update(State){
         next_piece: next_piece,
         frames_until_fall: frames_until_fall,
         can_fall: can_fall,
+        first_soft_drop_down: first_soft_drop_down,
         landing_time: landing_time
     }
-
+    
     window.requestAnimationFrame(function() {
         Update(State)
     })
