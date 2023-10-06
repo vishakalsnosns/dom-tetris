@@ -1,8 +1,7 @@
 const grid_div = document.getElementById("play-grid")
 const hold_div = document.getElementById("hold-grid")
 
-//setup logic
-//returns data for DOM editing (grid_html) ; collision detection (grid_coldata)
+//returns data for DOM editing and collision detection ; play grid
 function CreatePlayGrid(){
     let grid_height = 21
     let grid_width = 10
@@ -11,7 +10,7 @@ function CreatePlayGrid(){
     let grid_data = {}
 
     for(let x=0; x<grid_width; x++){
-        grid_data[`${x},0`] = 'no block'
+        grid_data[`${x},0`] = '0'
     }
     
     for(let y=1; y<grid_height; y++){
@@ -30,6 +29,8 @@ function CreatePlayGrid(){
     }
     return [grid_html, grid_data]
 }
+
+//returns data for DOM editing ; hold grid
 function CreateHoldGrid(){
     let hold_div = document.getElementById("hold-grid")
     let hold_height = 4
@@ -50,6 +51,8 @@ function CreateHoldGrid(){
     }
     return hold_html
 }
+
+//returns data for DOM editing ; next grid
 function CreateNextGrid(){
     let next_div = document.getElementById("next-grid")
     let next_height = 4
@@ -71,31 +74,25 @@ function CreateNextGrid(){
     return next_html
 }
 
-//global grid
+//global grid variables created
 [play_domgrid, play_colgrid] = CreatePlayGrid()
 hold_domgrid = CreateHoldGrid()
 next_domgrid = CreateNextGrid()
 
 
-
-//render logic
-function CoordToString(coord){
-    return JSON.stringify(coord).replace("[", "").replace("]", "")
-}
-
-//REPLACE WITH SWITCH !! in the PaintPlayCoord function
+//returns colors
 const piece_colors = {
-    "T": "purple",
-    "I": "cyan",
-    "J": "blue",
-    "L": "orange",
-    "O": "yellow",
-    "S": "blue",
-    "Z": "red"
+    "T": "#A000F0",
+    "I": "#00F0F0",
+    "J": "#0000F0",
+    "L": "#F0A000",
+    "O": "#F0F000",
+    "S": "#00F000",
+    "Z": "#F00000",
+    "NA": "rgb(30, 30, 30)"
 }
-const empty_color = "rgb(30, 30, 30)"
 
-//the reason why i wrote the last 75 lines
+//colors a play grid coordinate with the respective color
 function PaintPiece(active_piece, active_coords){
     for (let i=0; i<active_coords.length; i++){
         if (active_coords[i][1] > 0){
@@ -104,8 +101,74 @@ function PaintPiece(active_piece, active_coords){
     }
 }
 
-//game logic
-//7-bag implement ; ensure a re-execution and appending when 4 pieces are left for seamless bag cycling
+//colors a play grid coordinate with no color
+function DeleteCoords(coords){
+    for (let i=0; i<coords.length; i++){
+        if (coords[i][1] > 0){
+            play_domgrid[CoordToString(coords[i])].style.backgroundColor = piece_colors["NA"]
+        }
+    }
+}
+
+//color pieces onto the next grid
+function PaintNext(piece){
+    //clear next
+    for(let x=0; x<5; x++){
+        for(let y=0; y<4; y++){
+            next_domgrid[`${x},${y}`].style.backgroundColor = piece_colors["NA"]
+        }
+    }
+
+    //paint next
+    let coords;
+    switch (piece){
+        case "T":
+            coords = ["2,1","2,2","1,2","3,2"]
+            for (let i=0; i<4; i++){
+                next_domgrid[coords[i]].style.backgroundColor = piece_colors["T"]
+            }
+            break
+        case "I":
+            coords = ["2,0", "2,1","2,2","2,3"]
+            for (let i=0; i<4; i++){
+                next_domgrid[coords[i]].style.backgroundColor = piece_colors["I"]
+            }
+            break
+        case "J":
+            coords = ["1,1","1,2","2,2","3,2"]
+            for (let i=0; i<4; i++){
+                next_domgrid[coords[i]].style.backgroundColor = piece_colors["J"]
+            }
+            break
+        case "L":
+            coords = ["2,1","3,1","1,1","1,2"]
+            for (let i=0; i<4; i++){
+                next_domgrid[coords[i]].style.backgroundColor = piece_colors["L"]
+            }
+            break
+        case "O":
+            coords = ["1,1","2,1","2,2","1,2"]
+            for (let i=0; i<4; i++){
+                next_domgrid[coords[i]].style.backgroundColor = piece_colors["O"]
+            }
+            break
+        case "S":
+            coords = ["1,2","2,2","2,1","3,1"]
+            for (let i=0; i<4; i++){
+                next_domgrid[coords[i]].style.backgroundColor = piece_colors["S"]
+            }
+            break
+        case "Z":
+            coords = ["1,1","2,1","2,2","3,2"]
+            for (let i=0; i<4; i++){
+                next_domgrid[coords[i]].style.backgroundColor = piece_colors["Z"]
+            }
+            break
+    }
+}
+
+
+//returns shuffled 7-bag
 function ShuffleBag(){
     let pieces = ['T', 'I','J', 'L', 'O', 'S', 'Z']
     let bag = []
@@ -118,67 +181,111 @@ function ShuffleBag(){
     return bag
 }
 
+//returns intersection of two arrays
+function GetIntersection(first_coords, second_coords){
+    let intersection = []
+    for (let i=0; i<first_coords.length; i++){
+        
+        let matches = 0
+
+        for (let j=0; j<second_coords.length; j++){
+            if (JSON.stringify(first_coords[i]) === JSON.stringify(intersection[j])){
+                matches = 1
+                break
+            }
+        }
+
+        if (matches === 0){
+            intersection = [...intersection, first_coords[i]]
+        }
+    }
+    return intersection
+}
+
+//converts coordinate [x, y] into "x,y" ; for interacting with grid associative arrays
+function CoordToString(coord){
+    return JSON.stringify(coord).replace("[", "").replace("]", "")
+}
+
+//returns translated piece -1 in y
 function FallPiece(active_coords){
+    for(let i=0; i<4; i++){
+        if (active_coords[i][1] == 20 || play_colgrid[CoordToString([active_coords[i][0], active_coords[i][1]+1])] == "1"){
+            return active_coords
+        }
+    }
     let new_coords = []
     for (let i=0; i<active_coords.length; i++){
         new_coords = [...new_coords, [active_coords[i][0] ,active_coords[i][1] + 1]]
     }
 
-    //get everything in active_coords that is not part of the intersection of active_coords and new_coords
-    //push to del_coords to be wiped
-    let del_coords = []
-    for (let i=0; i<active_coords.length; i++){
+    let del_coords = GetIntersection(active_coords, new_coords)
 
-        let prev_coord = active_coords[i]
-        let matches = 0
-
-        for (let j=0; j<new_coords.length; j++){
-            let new_coord = new_coords[j]
-
-            if (JSON.stringify(prev_coord) === JSON.stringify(new_coord)){
-                matches = 1
-            }
-        }
-
-        if (matches === 0){
-            del_coords = [...del_coords, prev_coord]
-        }
-    }
-
-    for (let i=0; i<del_coords.length; i++){
-        if (del_coords[i][1] > 0){
-            play_domgrid[CoordToString(del_coords[i])].style.backgroundColor = empty_color
-        }
-    }
-
-
+    DeleteCoords(del_coords)
 
     return new_coords
 }
 
-const large_piece_coords = {
-    "T": ["2,1","2,2","1,2","3,2"],
-    "I": ["2,0", "2,1","2,2","2,3"],
-    "J": ["1,1","1,2","2,2","3,2"],
-    "L": ["2,1","3,1","1,1","1,2"],
-    "O": ["1,1","2,1","2,2","1,2"],
-    "S": ["1,2","2,2","2,1","3,1"],
-    "Z": ["1,1","2,1","2,2","3,2"]
-}
-function PaintNext(piece){
-    for (let i=0; i<4; i++){
-        next_domgrid[large_piece_coords[piece][i]].style.backgroundColor = piece_colors[piece]
-    }
-}
-function ClearNext(){
-    for(let x=0; x<5; x++){
-        for(let y=0; y<4; y++){
-            next_domgrid[`${x},${y}`].style.backgroundColor = empty_color
+//returns translated piece +/-1 in x
+function XMovePiece(active_coords, direction){
+    for(let i=0; i<4; i++){
+        let this_coord = active_coords[i]
+        if (this_coord[0] == 0 || play_colgrid[CoordToString([this_coord[0]-1, this_coord[1]])] == "1"){
+            if (direction == -1){
+                return active_coords
+            }
+        }
+        if (this_coord[0] == 9 || play_colgrid[CoordToString([this_coord[0]+1, this_coord[1]])] == "1"){
+            if (direction == 1){
+                return active_coords
+            }
         }
     }
+
+    let new_coords = []
+    for (let i=0; i<4; i++){
+
+        new_coords = [...new_coords, [active_coords[i][0] + direction, active_coords[i][1]]]
+
+    }
+    
+    let del_coords = GetIntersection(active_coords, new_coords)
+
+    DeleteCoords(del_coords)
+
+    return new_coords
 }
 
-//REPLACE WITH SWITCH x2 !! ; in the Ready function ; offset -1 in y for update specifications
+function CheckFallCollision(active_coords){
+    let prev = active_coords
+    if (JSON.stringify(FallPiece(active_coords)) != JSON.stringify(prev)){
+        return true
+    }
+    return false
+}
+
+function CheckLeftCollision(active_coords){
+    let prev = active_coords
+    if (JSON.stringify(XMovePiece(active_coords, -1) != JSON.stringify(prev))){
+        return true
+    }
+    return false
+}
+
+function CheckRightCollision(active_coords){
+    let prev= active_coords
+    if (JSON.stringify(XMovePiece(active_coords, 1) != JSON.stringify(prev))){
+        return true
+    }
+    return false
+}
+
+
+// functions (up) ; game engine (down)
+
+
+
+
 const starting_coords = {
     "T": [[3,1],[4,1],[5,1],[4,0]],
     "I": [[3,0],[4,0],[5,0],[6,0]],
@@ -189,39 +296,11 @@ const starting_coords = {
     "Z": [[4,1],[5,1],[3,0],[4,0]]
 }
 
-//engine logic
-//runs once to prepare State object
-let fall_rate = 60
-const frames_until_next_piece = 60
-function Ready(){
-    //prepare variables to pass into the State object
-
-    let bag = ShuffleBag()
-    active = bag[0]
-    next = bag[1]
-    bag.splice(0, 2)
-
-    let State = {
-        bag: bag,
-        active_piece: active,
-        active_coords: starting_coords[active],
-        next_piece: next,
-        frames_until_fall: fall_rate,
-        can_fall: true,
-        first_soft_drop_down: false,
-        landing_time: frames_until_next_piece
-    }
-
-    
-    Update(State)
-}
-
-//controls
+//controls layout
+let soft_drop_key_down = false
 let drop_key_down = false
 let left_key_down = false
 let right_key_down = false
-let soft_drop_key_down = false
-//button press event listeners
 document.addEventListener("keydown", (button) => {
     let key = button.code
     //drop button pressed
@@ -241,7 +320,7 @@ document.addEventListener("keydown", (button) => {
     }
 })
 document.addEventListener("keyup", (button) =>{
-    let key=button.code
+    let key = button.code
     switch (key){
         case "Space":
             drop_key_down = false
@@ -258,10 +337,37 @@ document.addEventListener("keyup", (button) =>{
     }
 })
 
-//runs recursively on 60fps to manipulate and rerender State object to DOM
+//difficulty ; fall_rate
+let fall_rate = 30
+
+
+//executes once
+function Ready(){
+    //prepare bag and pieces
+    let bag = ShuffleBag()
+    active = bag[0]
+    next = bag[1]
+    bag.splice(0, 2)
+
+    let State = {
+        bag: bag,                               //array of upcoming pieces
+        active_piece: active,                   //piece under player control 
+        active_coords: starting_coords[active], //array of coordinates to apply transformations
+        next_piece: next,                       //piece appearing next
+        frames_until_fall: fall_rate,           //timer for natural falling of pieces
+        can_fall: true,                         //bool of whether piece can translate down
+        landing_time: 60,                       //timer for time the piece can remain while can_fall is 0
+        second_x_move_timer: 20,
+        x_move_timer: 2
+    }
+
+    Update(State)
+}
+
+//executes every frame
 function Update(State){
     //UNPACK VARIABLES
-    let {bag, active_piece, active_coords, next_piece, frames_until_fall, can_fall, first_soft_drop_down, landing_time} = State
+    let {bag, active_piece, active_coords, next_piece, frames_until_fall, can_fall, landing_time, second_x_move_timer, x_move_timer} = State
     if (landing_time == 0){
         //RESET STATE VARIABLES DUE TO NEW PIECE
         
@@ -273,57 +379,79 @@ function Update(State){
         //cycle the pieces
         active_piece = next_piece
         active_coords = starting_coords[active_piece]
-
         next_piece = bag[0]
         bag.splice(0,1)
         if (bag.length < 2){
             ShuffleBag().map((e)=>{
                 bag.push(e)
             })
-        console.log(bag)
         }
         
-        //clear next
-        ClearNext()
+        //paint next piece
         PaintNext(next_piece)
 
         //reset timers
+        frames_until_fall = fall_rate
         can_fall = true
-        frames_until_fall = 60
-        landing_time = 60
+        landing_time = 30
+        second_x_move_timer = 20
     }
 
+    // x-movements
+    let left_and_right_down = left_key_down && right_key_down
 
+    if ((left_key_down || right_key_down) && !(left_and_right_down)){
+
+        if (second_x_move_timer == 20){
+            if (left_key_down){
+                active_coords = XMovePiece(active_coords, -1)
+            }
+            else if (right_key_down){
+                active_coords = XMovePiece(active_coords, 1)
+            }
+            second_x_move_timer = second_x_move_timer - 1
+        }
+        else if (second_x_move_timer == 0){
+            if(x_move_timer == 0){
+                x_move_timer = 2
+                if (left_key_down){
+                    active_coords = XMovePiece(active_coords, -1)
+                }
+                else if (right_key_down){
+                    active_coords = XMovePiece(active_coords, 1)
+                }
+            }
+            x_move_timer = x_move_timer - 1
+        }
+        else{
+            second_x_move_timer = second_x_move_timer - 1
+        }
+    }
+    else{
+        second_x_move_timer = 20
+        x_move_timer = 2
+    }
+    
     //y-movement
-
-    if (soft_drop_key_down && !first_soft_drop_down && can_fall){
-        first_soft_drop_down = true
-    }
-    else if (frames_until_fall == 0 && can_fall || first_soft_drop_down && can_fall){
+    can_fall = CheckFallCollision(active_coords)
+    if (can_fall && soft_drop_key_down && frames_until_fall > 5){frames_until_fall = 5}
+    if (can_fall && frames_until_fall == 0){
         active_coords = FallPiece(active_coords)
-        
         if (soft_drop_key_down){
-            frames_until_fall = 2
+            frames_until_fall = 5
         }
         else{
             frames_until_fall = fall_rate
         }
-        first_soft_drop_down = false
+        landing_time = 60
     }
-    else if(!can_fall && landing_time > 0){
+    else if (!can_fall){
         landing_time = landing_time - 1
+        frames_until_fall = 30
     }
+
     frames_until_fall = frames_until_fall - 1
 
-    //cases when the piece cant fall ; edits the can_fall variable to false to prevent the piece from falling
-    for(let i=0; i<active_coords.length; i++){
-        let this_coord = active_coords[i]
-        if (this_coord[1] == 20 || play_colgrid[CoordToString([this_coord[0],this_coord[1]+1])] == "1"){
-            can_fall = false
-        }
-    }
-
-    //hard dropping
     
 
     //RENDER--------------------------
@@ -331,10 +459,7 @@ function Update(State){
     PaintPiece(active_piece, active_coords)
     PaintNext(next_piece)
 
-
     //UPDATE STATE--------------------
-
-
     State = {
         bag: bag,
         active_piece: active_piece,
@@ -342,12 +467,14 @@ function Update(State){
         next_piece: next_piece,
         frames_until_fall: frames_until_fall,
         can_fall: can_fall,
-        first_soft_drop_down: first_soft_drop_down,
-        landing_time: landing_time
+        landing_time: landing_time,
+        second_x_move_timer: second_x_move_timer,
+        x_move_timer: 2
     }
     
     window.requestAnimationFrame(function() {
         Update(State)
     })
 }
+
 Ready()
