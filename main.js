@@ -338,7 +338,8 @@ document.addEventListener("keyup", (button) =>{
 })
 
 //difficulty ; fall_rate
-let fall_rate = 30
+let fall_rate = 40
+let x_move_rate = 2
 
 
 //executes once
@@ -358,7 +359,7 @@ function Ready(){
         can_fall: true,                         //bool of whether piece can translate down
         landing_time: 60,                       //timer for time the piece can remain while can_fall is 0
         second_x_move_timer: 20,
-        x_move_timer: 2
+        x_move_timer: x_move_rate
     }
 
     Update(State)
@@ -412,16 +413,19 @@ function Update(State){
             second_x_move_timer = second_x_move_timer - 1
         }
         else if (second_x_move_timer == 0){
-            if(x_move_timer == 0){
-                x_move_timer = 2
+            if (x_move_timer == 0){
                 if (left_key_down){
                     active_coords = XMovePiece(active_coords, -1)
                 }
                 else if (right_key_down){
                     active_coords = XMovePiece(active_coords, 1)
                 }
+
+                x_move_timer = x_move_rate
+                
             }
             x_move_timer = x_move_timer - 1
+
         }
         else{
             second_x_move_timer = second_x_move_timer - 1
@@ -429,7 +433,7 @@ function Update(State){
     }
     else{
         second_x_move_timer = 20
-        x_move_timer = 2
+        x_move_timer = x_move_rate
     }
     
     //y-movement
@@ -469,7 +473,7 @@ function Update(State){
         can_fall: can_fall,
         landing_time: landing_time,
         second_x_move_timer: second_x_move_timer,
-        x_move_timer: 2
+        x_move_timer: x_move_timer
     }
     
     window.requestAnimationFrame(function() {
